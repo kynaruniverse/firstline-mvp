@@ -1,14 +1,8 @@
 [build]
-command = ""
 publish = "."
-functions = "netlify/functions"
-
-[[plugins]]
-package = "@netlify/plugin-functions-install-core"
 
 [functions]
 directory = "netlify/functions"
-node_bundler = "esbuild"
 
 [[redirects]]
 from = "/*"
