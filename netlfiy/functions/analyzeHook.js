@@ -1,7 +1,4 @@
 // analyzeHook.js - Main serverless function for hook analysis
-// Handles: rate limiting, OpenAI API calls, database storage
-
-const { createClient } = require('@supabase/supabase-js');
 
 // System prompt (production-grade v1.0)
 const SYSTEM_PROMPT = `You are Firstline, a precision analysis engine for opening lines in digital writing.
@@ -67,11 +64,29 @@ Not motivational.
 
 Direct. Precise. Useful.`;
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
+  // CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  // Handle OPTIONS request
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers,
       body: JSON.stringify({ error: 'Method not allowed' })
     };
   }
@@ -84,6 +99,7 @@ exports.handler = async (event, context) => {
     if (!hook || typeof hook !== 'string') {
       return {
         statusCode: 400,
+        headers,
         body: JSON.stringify({ error: 'Hook text is required' })
       };
     }
@@ -91,58 +107,71 @@ exports.handler = async (event, context) => {
     if (hook.length > 280) {
       return {
         statusCode: 400,
+        headers,
         body: JSON.stringify({ error: 'Hook must be 280 characters or less' })
       };
     }
 
     // Get auth token from header
-    const authHeader = event.headers.authorization;
+    const authHeader = event.headers.authorization || event.headers.Authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ error: 'Unauthorized' })
+        headers,
+        body: JSON.stringify({ error: 'Unauthorized - no token provided' })
       };
     }
 
     const token = authHeader.replace('Bearer ', '');
 
-    // Initialize Supabase with service role key
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY
-    );
+    // Verify token with Supabase
+    const supabaseVerifyResponse = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': process.env.SUPABASE_ANON_KEY
+      }
+    });
 
-    // Verify user from token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
+    if (!supabaseVerifyResponse.ok) {
       return {
         statusCode: 401,
+        headers,
         body: JSON.stringify({ error: 'Invalid token' })
       };
     }
 
+    const user = await supabaseVerifyResponse.json();
+
     // Check rate limit (5 per day)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayISO = today.toISOString();
 
-    const { data: usageData, error: usageError } = await supabase
-      .from('hook_analyses')
-      .select('id')
-      .eq('user_id', user.id)
-      .gte('created_at', today.toISOString());
+    const usageCheckResponse = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/hook_analyses?user_id=eq.${user.id}&created_at=gte.${todayISO}&select=id`,
+      {
+        headers: {
+          'apikey': process.env.SUPABASE_SERVICE_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
+        }
+      }
+    );
 
-    if (usageError) {
-      console.error('Usage check error:', usageError);
+    if (!usageCheckResponse.ok) {
+      console.error('Usage check failed:', await usageCheckResponse.text());
       return {
         statusCode: 500,
+        headers,
         body: JSON.stringify({ error: 'Failed to check usage limit' })
       };
     }
 
+    const usageData = await usageCheckResponse.json();
+
     if (usageData.length >= 5) {
       return {
         statusCode: 429,
+        headers,
         body: JSON.stringify({ 
           error: 'Daily limit reached. You can analyze 5 hooks per day.' 
         })
@@ -174,11 +203,12 @@ exports.handler = async (event, context) => {
     });
 
     if (!openaiResponse.ok) {
-      const errorData = await openaiResponse.json();
+      const errorData = await openaiResponse.text();
       console.error('OpenAI API error:', errorData);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'AI analysis failed' })
+        headers,
+        body: JSON.stringify({ error: 'AI analysis failed. Check API key and credits.' })
       };
     }
 
@@ -190,26 +220,30 @@ exports.handler = async (event, context) => {
     const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
 
     // Save to database
-    const { error: insertError } = await supabase
-      .from('hook_analyses')
-      .insert({
+    const saveResponse = await fetch(`${process.env.SUPABASE_URL}/rest/v1/hook_analyses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
         user_id: user.id,
         input_text: hook,
         score: score
-      });
+      })
+    });
 
-    if (insertError) {
-      console.error('Database insert error:', insertError);
-      // Don't fail the request if database insert fails
-      // User still gets their analysis
+    if (!saveResponse.ok) {
+      console.error('Database insert failed:', await saveResponse.text());
+      // Don't fail the request - user still gets analysis
     }
 
     // Return analysis
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
         analysis: analysis
       })
@@ -219,7 +253,8 @@ exports.handler = async (event, context) => {
     console.error('Function error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' })
+      headers,
+      body: JSON.stringify({ error: 'Internal server error: ' + error.message })
     };
   }
 };

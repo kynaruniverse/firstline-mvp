@@ -1,8 +1,0 @@
-{
-  "name": "firstline-mvp",
-  "version": "1.0.0",
-  "description": "Opening Performance Engine for Digital Writing",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
-  }
-}
