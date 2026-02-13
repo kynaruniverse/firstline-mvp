@@ -1,0 +1,270 @@
+/* styles.css - Minimal, functional styling */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #ffffff;
+  color: #1a1a1a;
+  line-height: 1.6;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #000000;
+}
+
+.tagline {
+  font-size: 14px;
+  color: #666666;
+  margin-bottom: 40px;
+}
+
+/* Auth Container */
+.auth-container {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.auth-container h2 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.auth-tab {
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-size: 15px;
+  color: #666666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.auth-tab.active {
+  color: #000000;
+  border-bottom-color: #000000;
+  font-weight: 500;
+}
+
+.auth-form {
+  display: none;
+}
+
+.auth-form.active {
+  display: block;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #333333;
+}
+
+input[type="email"],
+input[type="password"],
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #ffffff;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: #000000;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+  max-height: 200px;
+}
+
+.char-counter {
+  text-align: right;
+  font-size: 12px;
+  color: #999999;
+  margin-top: 4px;
+}
+
+.char-counter.warning {
+  color: #ff6b6b;
+}
+
+/* Buttons */
+button {
+  width: 100%;
+  padding: 12px;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #333333;
+}
+
+button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  background: #f0f0f0;
+  color: #000000;
+  margin-top: 10px;
+}
+
+.secondary-btn:hover {
+  background: #e0e0e0;
+}
+
+/* App Container */
+.app-container {
+  display: none;
+}
+
+.app-container.active {
+  display: block;
+}
+
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  margin-bottom: 30px;
+  font-size: 14px;
+}
+
+.user-email {
+  color: #666666;
+}
+
+.logout-btn {
+  width: auto;
+  padding: 8px 16px;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #d0d0d0;
+  font-size: 13px;
+}
+
+.logout-btn:hover {
+  background: #f0f0f0;
+}
+
+.rate-limit-info {
+  text-align: center;
+  font-size: 13px;
+  color: #666666;
+  margin-bottom: 20px;
+}
+
+.rate-limit-info strong {
+  color: #000000;
+}
+
+/* Loading State */
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666666;
+}
+
+/* Error Messages */
+.error-message {
+  background: #fff5f5;
+  border: 1px solid #ffcccc;
+  color: #cc0000;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Success Messages */
+.success-message {
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  color: #22543d;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Results Display */
+.results {
+  margin-top: 30px;
+  padding: 25px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  display: none;
+}
+
+.results.active {
+  display: block;
+}
+
+.results pre {
+  white-space: pre-wrap;
+  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #1a1a1a;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+  body {
+    padding: 15px;
+  }
+  
+  h1 {
+    font-size: 24px;
+  }
+  
+  .auth-container {
+    padding: 20px;
+  }
+}
