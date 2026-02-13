@@ -1,13 +1,70 @@
-// script.js - Main application logic
+// script.js - Complete application with auth included
 
-// Supabase configuration will be injected here
-// In production, these would come from Netlify environment variables via a serverless function
-// For now, we'll load them directly (you'll add them after deployment)
-
+// Supabase configuration
 const SUPABASE_URL = 'https://ahvoijugqchxwltmfqxf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodm9panVncWNoeHdsdG1mcXhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzQzNTIsImV4cCI6MjA4NjUxMDM1Mn0.JnbYypJNbRdoxj65icl_deDLu_FiZqGYAMEY9vZXjuk';
 
-// Initialize app when DOM is loaded
+// Initialize Supabase client
+let supabase;
+
+// ===== AUTH FUNCTIONS =====
+
+function initSupabase(supabaseUrl, supabaseAnonKey) {
+  supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+}
+
+async function checkAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
+}
+
+async function signUp(email, password) {
+  const { data, error } = await supabase.auth.signUp({
+    email: email,
+    password: password,
+  });
+  
+  if (error) {
+    throw new Error(error.message);
+  }
+  
+  return data;
+}
+
+async function signIn(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password,
+  });
+  
+  if (error) {
+    throw new Error(error.message);
+  }
+  
+  return data;
+}
+
+async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function getCurrentUser() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
+function onAuthStateChange(callback) {
+  supabase.auth.onAuthStateChange((event, session) => {
+    callback(event, session);
+  });
+}
+
+// ===== APP INITIALIZATION =====
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize Supabase
   initSupabase(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -37,13 +94,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Show authentication UI
+// ===== UI FUNCTIONS =====
+
 function showAuth() {
   document.getElementById('authContainer').style.display = 'block';
   document.getElementById('appContainer').classList.remove('active');
 }
 
-// Show main app UI
 async function showApp(user) {
   document.getElementById('authContainer').style.display = 'none';
   document.getElementById('appContainer').classList.add('active');
@@ -53,7 +110,6 @@ async function showApp(user) {
   await loadUsageStats();
 }
 
-// Switch between login and signup tabs
 function switchAuthTab(tab) {
   const loginTab = document.querySelector('.auth-tab:nth-child(1)');
   const signupTab = document.querySelector('.auth-tab:nth-child(2)');
@@ -78,7 +134,8 @@ function switchAuthTab(tab) {
   document.getElementById('signupSuccess').style.display = 'none';
 }
 
-// Handle login
+// ===== AUTH HANDLERS =====
+
 async function handleLogin(event) {
   event.preventDefault();
   
@@ -103,7 +160,6 @@ async function handleLogin(event) {
   }
 }
 
-// Handle signup
 async function handleSignup(event) {
   event.preventDefault();
   
@@ -138,7 +194,6 @@ async function handleSignup(event) {
   }
 }
 
-// Handle logout
 async function handleLogout() {
   try {
     await signOut();
@@ -148,7 +203,8 @@ async function handleLogout() {
   }
 }
 
-// Update character counter
+// ===== UTILITY FUNCTIONS =====
+
 function updateCharCounter() {
   const input = document.getElementById('hookInput');
   const counter = document.getElementById('charCounter');
@@ -163,7 +219,6 @@ function updateCharCounter() {
   }
 }
 
-// Load user's usage statistics
 async function loadUsageStats() {
   const rateLimitInfo = document.getElementById('rateLimitInfo');
   
@@ -192,7 +247,8 @@ async function loadUsageStats() {
   }
 }
 
-// Analyze hook
+// ===== HOOK ANALYSIS =====
+
 async function analyzeHook(event) {
   event.preventDefault();
   
