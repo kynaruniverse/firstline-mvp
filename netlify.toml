@@ -1,8 +1,12 @@
 [build]
-  functions = "netlify/functions"
-  publish = "."
+command = ""
+publish = "."
+functions = "netlify/functions"
+
+[functions]
+node_bundler = "esbuild"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+from = "/*"
+to = "/index.html"
+status = 200
