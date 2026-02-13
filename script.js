@@ -1,25 +1,25 @@
 // script.js - Complete application with auth included
 
 // Supabase configuration
-const SUPABASE_URL = 'https://ahvoijugqchxwltmfqxf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodm9panVncWNoeHdsdG1mcXhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzQzNTIsImV4cCI6MjA4NjUxMDM1Mn0.JnbYypJNbRdoxj65icl_deDLu_FiZqGYAMEY9vZXjuk';
+const SUPABASE_URL = 'https://ahvoijugqchxwltmfqxf.supabase.co'; // Replace with your actual URL
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodm9panVncWNoeHdsdG1mcXhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzQzNTIsImV4cCI6MjA4NjUxMDM1Mn0.JnbYypJNbRdoxj65icl_deDLu_FiZqGYAMEY9vZXjuk'; // Replace with your actual key
 
-// Initialize Supabase client
-let supabase;
+// Initialize Supabase client (using different variable name to avoid conflict)
+let supabaseClient;
 
 // ===== AUTH FUNCTIONS =====
 
 function initSupabase(supabaseUrl, supabaseAnonKey) {
-  supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+  supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 }
 
 async function checkAuth() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   return session;
 }
 
 async function signUp(email, password) {
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabaseClient.auth.signUp({
     email: email,
     password: password,
   });
@@ -32,7 +32,7 @@ async function signUp(email, password) {
 }
 
 async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: email,
     password: password,
   });
@@ -45,7 +45,7 @@ async function signIn(email, password) {
 }
 
 async function signOut() {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabaseClient.auth.signOut();
   
   if (error) {
     throw new Error(error.message);
@@ -53,12 +53,12 @@ async function signOut() {
 }
 
 async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   return user;
 }
 
 function onAuthStateChange(callback) {
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     callback(event, session);
   });
 }
@@ -110,7 +110,8 @@ async function showApp(user) {
   await loadUsageStats();
 }
 
-function switchAuthTab(tab) {
+// Make this function globally accessible
+window.switchAuthTab = function(tab) {
   const loginTab = document.querySelector('.auth-tab:nth-child(1)');
   const signupTab = document.querySelector('.auth-tab:nth-child(2)');
   const loginForm = document.getElementById('loginForm');
@@ -136,7 +137,8 @@ function switchAuthTab(tab) {
 
 // ===== AUTH HANDLERS =====
 
-async function handleLogin(event) {
+// Make this function globally accessible
+window.handleLogin = async function(event) {
   event.preventDefault();
   
   const email = document.getElementById('loginEmail').value;
@@ -160,7 +162,8 @@ async function handleLogin(event) {
   }
 }
 
-async function handleSignup(event) {
+// Make this function globally accessible
+window.handleSignup = async function(event) {
   event.preventDefault();
   
   const email = document.getElementById('signupEmail').value;
@@ -194,7 +197,8 @@ async function handleSignup(event) {
   }
 }
 
-async function handleLogout() {
+// Make this function globally accessible
+window.handleLogout = async function() {
   try {
     await signOut();
     showAuth();
@@ -229,7 +233,7 @@ async function loadUsageStats() {
     // Call serverless function to get usage count
     const response = await fetch('/.netlify/functions/getUsage', {
       headers: {
-        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session.access_token}`
+        'Authorization': `Bearer ${(await supabaseClient.auth.getSession()).data.session.access_token}`
       }
     });
     
@@ -249,7 +253,8 @@ async function loadUsageStats() {
 
 // ===== HOOK ANALYSIS =====
 
-async function analyzeHook(event) {
+// Make this function globally accessible
+window.analyzeHook = async function(event) {
   event.preventDefault();
   
   const input = document.getElementById('hookInput').value.trim();
@@ -273,7 +278,7 @@ async function analyzeHook(event) {
     resultsDiv.classList.remove('active');
     
     // Get auth token
-    const session = await supabase.auth.getSession();
+    const session = await supabaseClient.auth.getSession();
     const token = session.data.session.access_token;
     
     // Call serverless function
